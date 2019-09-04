@@ -7,6 +7,21 @@ use Illuminate\Http\Request;
 class WechatController extends Controller
 {
     /**
+     * 上传
+     */
+    public function upload(){
+        return view('Wechat.upload');
+    }
+
+    public function do_upload(Request $request){
+        $name = 'image';
+        if(!empty($request->hasFile($name)) && request()->file($name)->isValid()){
+            $path = request()->file($name)->store('goods');
+            dd('/storage/'.$path);
+        }
+    }
+
+    /**
      * 获取用户列表
      */
     public function get_user_list()
