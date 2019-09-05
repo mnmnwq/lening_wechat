@@ -16,14 +16,26 @@ class WechatController extends Controller
      * 上传
      */
     public function upload(){
-        return view('Wechat.upload');
+        return view('Wechat.upload',[]);
     }
 
+    /**
+     * image video voice thumb
+     * id media_id path ['/storage/wechat/image/imagename.jpg'] add_time
+     * @param Request $request
+     */
     public function do_upload(Request $request){
-        $name = 'image';
+
+        $name = 'file_name';
         if(!empty($request->hasFile($name)) && request()->file($name)->isValid()){
-            $path = request()->file($name)->store('goods');
-            dd('/storage/'.$path);
+            //$size = $request->file($name)->getClientSize() / 1024 / 1024;
+            $ext = $request->file($name)->getClientOriginalExtension();  //文件类型
+            $file_name = time().rand(1000,9999).'.'.$ext;
+            $path = request()->file($name)->storeAs('wechat\voice',$file_name);
+            $path = realpath('./storage/'.$path);
+            $url = 'https://api.weixin.qq.com/cgi-bin/media/upload?access_token='.$this->get_wechat_access_token().'&type=voice';
+            $result = $this->curl_upload($url,$path);
+            dd($result);
         }
     }
 
@@ -52,6 +64,28 @@ class WechatController extends Controller
     public function get_access_token()
     {
         return $this->get_wechat_access_token();
+    }
+
+    /**
+     * curl上传微信素材
+     * @param $url
+     * @param $path
+     * @return bool|string
+     */
+    public function curl_upload($url,$path)
+    {
+        $curl = curl_init($url);
+        curl_setopt($curl,CURLOPT_RETURNTRANSFER,true);
+        curl_setopt($curl,CURLOPT_POST,true);  //发送post
+        $form_data = [
+            'meida' => new \CURLFile($path)
+        ];
+        curl_setopt($curl,CURLOPT_POSTFIELDS,$form_data);
+        $data = curl_exec($curl);
+        //$errno = curl_errno($curl);  //错误码
+        //$err_msg = curl_error($curl); //错误信息
+        curl_close($curl);
+        return $data;
     }
 
 
