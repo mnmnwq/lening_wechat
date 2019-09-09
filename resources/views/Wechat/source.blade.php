@@ -23,8 +23,7 @@
             <td>{{$v->path}}</td>
             <td>{{date('Y-m-d H:i',$v->add_time)}}</td>
             <td>
-                <a href="{{url('/wechat/del_source')}}">删除</a> |
-                <a href="{{url('')}}">下载资源</a>
+                <a href="{{url('/wechat/del_source')}}">删除</a> @if($v->is_download == 1) | <a href="{{url('/wechat/download_source')}}?id={{$v->id}}">下载资源</a>@endif
             </td>
         </tr>
         @endforeach

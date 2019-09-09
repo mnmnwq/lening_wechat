@@ -6,13 +6,17 @@ use Illuminate\Http\Request;
 use GuzzleHttp\Client;
 use DB;
 use App\Tools\Tools;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Http\File;
 
 class WechatController extends Controller
 {
     public $tools;
-    public function __construct(Tools $tools)
+    public $client;
+    public function __construct(Tools $tools,Client $client)
     {
         $this->tools = $tools;
+        $this->client = $client;
     }
     /**
      * 调用频次清0
@@ -28,6 +32,46 @@ class WechatController extends Controller
         dd($_POST);
     }
 
+    public function download_source(Request $request)
+    {
+        $req = $request->all();
+        $source_info = DB::connection('mysql_cart')->table('wechat_source')->where(['id'=>$req['id']])->first();
+        $source_arr = [1=>'image',2=>'voice',3=>'video',4=>'thumb'];
+        $source_type = $source_arr[$source_info->type]; //image,voice,video,thumb
+        //素材列表
+        //$media_id = 'dcgUiQ4LgcdYRovlZqP88RB3GUc9kszTy771IOSadSM'; //音频
+        //$media_id = 'dcgUiQ4LgcdYRovlZqP88dUuf1H6G4Z84rdYXuCmj6s'; //视频
+        $media_id = $source_info->media_id;
+        $url = 'https://api.weixin.qq.com/cgi-bin/material/get_material?access_token='.$this->get_wechat_access_token();
+        $re = $this->curl_post($url,json_encode(['media_id'=>$media_id]));
+        if($source_type != 'video'){
+            Storage::put('wechat/'.$source_type.'/'.$source_info->file_name, $re);
+            DB::connection('mysql_cart')->table('wechat_source')->where(['id'=>$req['id']])->update([
+                'path'=>'/storage/wechat/'.$source_type.'/'.$source_info->file_name,
+            ]);
+            dd('ok');
+        }
+        $result = json_decode($re,1);
+        //设置超时参数
+        $opts=array(
+            "http"=>array(
+                "method"=>"GET",
+                "timeout"=>3  //单位秒
+            ),
+        );
+        //创建数据流上下文
+        $context = stream_context_create($opts);
+        //$url请求的地址，例如：
+        $read = file_get_contents($result['down_url'],false, $context);
+
+        Storage::put('wechat/video/'.$source_info['file_name'], $read);
+        DB::connection('mysql_cart')->table('wechat_source')->where(['id'=>$req['id']])->update([
+            'path'=>'/storage/wechat/'.$source_type.'/'.$source_info->file_name,
+        ]);
+        dd('ok');
+        //Storage::put('file.mp3', $re);
+    }
+
     /**
      * 微信素材管理页面
      */
@@ -39,7 +83,7 @@ class WechatController extends Controller
         if(!in_array($source_type,['image','voice','video','thumb'])){
             dd('类型错误');
         }
-        if($req['page'] <= 0 ){
+        if(!empty($req['page']) && $req['page'] <= 0 ){
             dd('页码错误');
         }
         empty($req['page'])?$page = 1:$page=$req['page'];
@@ -49,7 +93,7 @@ class WechatController extends Controller
         $pre_page = $page - 1;
         $pre_page <= 0 && $pre_page = 1;
         $next_page = $page + 1;
-
+        //获取素材列表
         $url = 'https://api.weixin.qq.com/cgi-bin/material/batchget_material?access_token='.$this->get_wechat_access_token();
         $data = [
             'type' =>$source_type,
@@ -61,18 +105,36 @@ class WechatController extends Controller
 //            'body' => json_encode($data)
 //        ]);
 //        $re = $r->getBody();
-
-
         $re = $this->tools->redis->get('source_info');
         //$re = $this->curl_post($url,json_encode($data));
+        $this->tools->redis->set('source_info',$re);
         $info = json_decode($re,1);
+//        dd($info);
         $media_id_list = [];
+        $source_arr = ['image'=>1,'voice'=>2,'video'=>3,'thumb'=>4];
         foreach($info['item'] as $v){
+            //同步数据库
+            $media_info = DB::connection('mysql_cart')->table('wechat_source')->where(['media_id'=>$v['media_id']])->select(['id'])->first();
+            if(empty($media_info)){
+                DB::connection('mysql_cart')->table('wechat_source')->insert([
+                    'media_id'=>$v['media_id'],
+                    'type' => $source_arr[$source_type],
+                    'add_time'=>$v['update_time'],
+                    'file_name'=>$v['name'],
+                ]);
+            }
             $media_id_list[] = $v['media_id'];
         }
-        $source_info = DB::connection('mysql_cart')->table('wechat_source')->whereIn('media_id',$media_id_list)->get();
-        //dd($source_info);
-
+        $source_info = DB::connection('mysql_cart')->table('wechat_source')->whereIn('media_id',$media_id_list)->where(['type'=>$source_arr[$source_type]])->get();
+        foreach($source_info as $k=>$v){
+            $is_download = 0;  //是否需要下载文件 0 否 1 是
+            if(empty($v->path)){
+                $is_download = 1;
+            }elseif (!empty($v->path) && !file_exists('.'.$v->path)){
+                $is_download = 1;
+            }
+            $source_info[$k]->is_download = $is_download;
+        }
         return view('Wechat.source',['info'=>$source_info,'pre_page'=>$pre_page,'next_page'=>$next_page,'source_type'=>$source_type]);
     }
 
@@ -117,7 +179,14 @@ class WechatController extends Controller
             $path = realpath('./storage/'.$path);
             $url = 'https://api.weixin.qq.com/cgi-bin/material/add_material?access_token='.$this->get_wechat_access_token().'&type='.$source_type;
             //$result = $this->curl_upload($url,$path);
-            $result = $this->guzzle_upload($url,$path,$client);
+            if($source_type == 'video'){
+                $title = '标题'; //视频标题
+                $desc = '描述'; //视频描述
+                $result = $this->guzzle_upload($url,$path,$client,1,$title,$desc);
+            }else{
+                $result = $this->guzzle_upload($url,$path,$client);
+            }
+
             $re = json_decode($result,1);
 
             //插入数据库
@@ -158,14 +227,21 @@ class WechatController extends Controller
         return $this->get_wechat_access_token();
     }
 
-    public function guzzle_upload($url,$path,$client){
-        $result = $client->request('POST',$url,[
-            'multipart' => [
-                [
-                    'name'     => 'media',
-                    'contents' => fopen($path, 'r')
-                ]
+    public function guzzle_upload($url,$path,$client,$is_video=0,$title='',$desc=''){
+        $multipart =  [
+            [
+                'name'     => 'media',
+                'contents' => fopen($path, 'r')
             ]
+        ];
+        if($is_video == 1){
+            $multipart[] = [
+                'name'=>'description',
+                'contents' => json_encode(['title'=>$title,'introduction'=>$desc],JSON_UNESCAPED_UNICODE)
+            ];
+        }
+        $result = $client->request('POST',$url,[
+            'multipart' => $multipart
         ]);
         return $result->getBody();
     }

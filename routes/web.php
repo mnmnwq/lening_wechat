@@ -18,6 +18,7 @@ Route::get('/', function () {
 Route::get('/login','LoginController@login');
 Route::get('/wechat/clear_api','WechatController@clear_api');
 Route::get('/wechat/source','WechatController@wechat_source'); //素材管理
+Route::get('/wechat/download_source','WechatController@download_source'); //下载资源
 
 Route::get('/wechat/upload','WechatController@upload'); //上传
 Route::post('/wechat/do_upload','WechatController@do_upload'); //上传
