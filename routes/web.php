@@ -16,6 +16,14 @@ Route::get('/', function () {
 });
 
 Route::get('/login','LoginController@login');
+//////////////////////////////////////////////////////////////////////////////////////////////////
+///
+Route::get('/wechat/tag_list','TagController@tag_list');  //公众号标签列表
+Route::get('/wechat/add_tag','TagController@add_tag');
+Route::post('/wechat/do_add_tag','TagController@do_add_tag');
+
+//////////////////////////////////////////////////////////////////////////////////////////////////
+
 Route::get('/wechat/clear_api','WechatController@clear_api');
 Route::get('/wechat/source','WechatController@wechat_source'); //素材管理
 Route::get('/wechat/download_source','WechatController@download_source'); //下载资源
