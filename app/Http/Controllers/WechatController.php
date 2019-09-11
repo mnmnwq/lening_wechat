@@ -203,20 +203,22 @@ class WechatController extends Controller
     /**
      * 获取用户列表
      */
-    public function get_user_list()
+    public function get_user_list(Request $request)
     {
-        $result = file_get_contents('https://api.weixin.qq.com/cgi-bin/user/get?access_token='.$this->tools->get_wechat_access_token().'&next_openid=');
-        $re = json_decode($result,1);
-        $last_info = [];
-        foreach($re['data']['openid'] as $k=>$v){
-            $user_info = file_get_contents('https://api.weixin.qq.com/cgi-bin/user/info?access_token='.$this->tools->get_wechat_access_token().'&openid='.$v.'&lang=zh_CN');
-            $user = json_decode($user_info,1);
-            $last_info[$k]['nickname'] = $user['nickname'];
-            $last_info[$k]['openid'] = $v;
-        }
-        dd($last_info);
+        $req = $request->all();
+        $openid_info = DB::connection('mysql_cart')->table('wechat_openid')->get();
+//        $result = file_get_contents('https://api.weixin.qq.com/cgi-bin/user/get?access_token='.$this->tools->get_wechat_access_token().'&next_openid=');
+//        $re = json_decode($result,1);
+//        $last_info = [];
+//        foreach($re['data']['openid'] as $k=>$v){
+//            $user_info = file_get_contents('https://api.weixin.qq.com/cgi-bin/user/info?access_token='.$this->tools->get_wechat_access_token().'&openid='.$v.'&lang=zh_CN');
+//            $user = json_decode($user_info,1);
+//            $last_info[$k]['nickname'] = $user['nickname'];
+//            $last_info[$k]['openid'] = $v;
+//        }
+        //dd($last_info);
         //dd($re['data']['openid']);
-        return view('Wechat.userList',['info'=>$re['data']['openid']]);
+        return view('Wechat.userList',['info'=>$openid_info,'tagid'=>isset($req['tagid'])?$req['tagid']:'']);
     }
 
     /**
