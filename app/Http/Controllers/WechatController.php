@@ -18,6 +18,35 @@ class WechatController extends Controller
         $this->tools = $tools;
         $this->client = $client;
     }
+
+    public function push_template_message()
+    {
+        $openid = 'otAUQ1cLVoT4CrtTJX6ue6auuZn0';
+        $url = 'https://api.weixin.qq.com/cgi-bin/message/template/send?access_token='.$this->tools->get_wechat_access_token();
+        $data = [
+            'touser'=>$openid,
+            'template_id'=>'YBn0oqTBcJpzXNc8x9FUXfW9xCABnuc48SIC80w133g',
+            'url'=>'http://www.wechat.com',
+            'data'=>[
+                'first'=>[
+                    'value'=>'first',
+                    'color'=>''
+                ],
+                'keyword1'=>[
+                    'value'=>'keyword1',
+                    'color'=>''
+                ],
+                'keyword2'=>[
+                    'value'=>'keyword2',
+                    'color'=>''
+                ]
+            ]
+        ];
+        $re = $this->tools->curl_post($url,json_encode($data,JSON_UNESCAPED_UNICODE));
+        $result = json_decode($re,1);
+        dd($result);
+    }
+
     /**
      * 调用频次清0
      */

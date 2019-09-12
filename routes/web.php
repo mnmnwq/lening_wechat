@@ -16,6 +16,7 @@ Route::get('/', function () {
 });
 
 Route::get('/login','LoginController@login');
+
 ////////////////////////////////////////////// 标签////////////////////////////////////////////////////
 ///
 Route::get('/wechat/tag_list','TagController@tag_list');  //公众号标签列表
@@ -27,6 +28,9 @@ Route::post('/wechat/tag_openid','TagController@tag_openid'); //为用户打标�
 Route::get('/wechat/user_tag_list','TagController@user_tag_list'); //用户下的标签列表
 Route::get('/wechat/push_tag_message','TagController@push_tag_message'); //推送标签消息
 Route::post('/wechat/do_push_tag_message','TagController@do_push_tag_message'); //执行推送标签消息
+
+
+Route::get('/wechat/push_template_message','WechatController@push_template_message'); //
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 

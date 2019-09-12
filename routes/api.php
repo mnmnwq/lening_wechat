@@ -18,4 +18,6 @@ Route::middleware('auth:api')->get('/user', function (Request $request) {
 });
 Route::post('post_test','WechatController@post_test');
 
+Route::any('event','EventController@event');
+
 
