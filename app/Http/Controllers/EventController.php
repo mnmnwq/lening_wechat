@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use DB;
 
 class EventController extends Controller
 {
@@ -21,5 +22,12 @@ class EventController extends Controller
         $xml_arr = (array)$xml_obj;
         \Log::Info(json_encode($xml_arr,JSON_UNESCAPED_UNICODE));
         //echo $_GET['echostr'];
+        //业务逻辑
+        if($xml_arr['MsgType'] == 'event'){
+            if($xml_arr['Event'] == 'subscribe'){
+                $share_code = explode('_',$xml_arr['EventKey'])[1];
+                DB::connection('mysql_cart')->table('user')->where(['id'=>$share_code])->increments('share_num',1);
+            }
+        }
     }
 }

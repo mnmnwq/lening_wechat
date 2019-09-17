@@ -16,19 +16,11 @@ class Login
     public function handle($request, Closure $next)
     {
         //前置
-        //$result = $request->session()->has('username');
-        $result = $request->session()->has('uid');
-        if($result){
-            echo "登陆成功！";
-        }else{
-            //return redirect('student/login');
-        }
-        
+
         $response = $next($request);
-        //  后置
-        //echo 222222;
+        //后置
 
         return $response;
-        //return $next($request);
+//        return $next($request);
     }
 }
