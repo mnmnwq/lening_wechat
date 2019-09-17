@@ -26,7 +26,7 @@ class EventController extends Controller
         if($xml_arr['MsgType'] == 'event'){
             if($xml_arr['Event'] == 'subscribe'){
                 $share_code = explode('_',$xml_arr['EventKey'])[1];
-                DB::connection('mysql_cart')->table('user')->where(['id'=>$share_code])->increments('share_num',1);
+                DB::connection('mysql_cart')->table('user')->where(['id'=>$share_code])->increment('share_num',1);
             }
         }
     }
