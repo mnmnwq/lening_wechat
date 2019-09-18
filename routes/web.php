@@ -16,6 +16,13 @@ Route::get('/', function () {
 });
 
 Route::get('/login','LoginController@login');
+///////////////////////////////////////////////////////////////////////////////////////////////
+Route::post('/wechat/create_menu','MenuController@create_menu'); //创建菜单
+Route::get('/wechat/menu_list','MenuController@menu_list');
+Route::get('/wechat/load_menu','MenuController@load_menu');
+Route::get('/wechat/del_menu','MenuController@del_menu');
+
+
 ////////////////////////////////////////////////////////////////////////////////////////////////
 Route::get('/agent/agent_list','AgentController@agent_list');
 Route::get('/agent/create_qrcode','AgentController@create_qrcode'); //创建二维码
