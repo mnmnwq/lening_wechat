@@ -18,7 +18,7 @@ class LoginController extends Controller
      */
     public function wechat_login()
     {
-        $redirect_uri = 'http://www.wechat.com/wechat/code';
+        $redirect_uri = env('APP_URL').'wechat/code';
         $url = 'https://open.weixin.qq.com/connect/oauth2/authorize?appid='.env('WECHAT_APPID').'&redirect_uri='.urlencode($redirect_uri).'&response_type=code&scope=snsapi_userinfo&state=STATE#wechat_redirect';
         header('Location:'.$url);
     }
