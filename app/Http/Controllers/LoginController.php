@@ -35,7 +35,6 @@ class LoginController extends Controller
        $wechat_user_info = json_decode($user_info,1);
         $openid = $re['openid'];
         $wechat_info = DB::connection('mysql_cart')->table('user_wechat')->where(['openid'=>$openid])->first();
-        dd($wechat_info);
         if(!empty($wechat_info)){
             //存在,登陆
             $request->session()->put('uid',$wechat_info->uid);
