@@ -19,6 +19,17 @@ class WechatController extends Controller
         $this->client = $client;
     }
 
+    public function location()
+    {
+        $url = 'http://'.$_SERVER['HTTP_HOST'].$_SERVER['REQUEST_URI'];
+        $jsapi_ticket = $this->tools->get_wechat_jsapi_ticket();
+        $timestamp = time();
+        $nonceStr = rand(1000,9999).'suibian';
+        $sign_str = 'jsapi_ticket='.$jsapi_ticket.'&noncestr='.$nonceStr.'&timestamp='.$timestamp.'&url='.$url;
+        $signature = sha1($sign_str);
+        return view('Wechat.location',['nonceStr'=>$nonceStr,'timestamp'=>$timestamp,'signature'=>$signature]);
+    }
+
     public function push_template_message()
     {
         $openid = 'otAUQ1cLVoT4CrtTJX6ue6auuZn0';

@@ -16,6 +16,9 @@ Route::get('/', function () {
 });
 
 Route::get('/login','LoginController@login');
+
+Route::get('/wechat/location','WechatController@location'); //jssdk获取地理位置
+
 ///////////////////////////////////////////////////////////////////////////////////////////////
 Route::post('/wechat/create_menu','MenuController@create_menu'); //创建菜单
 Route::get('/wechat/menu_list','MenuController@menu_list');
