@@ -245,6 +245,9 @@ class WechatController extends Controller
      */
     public function get_user_list(Request $request)
     {
+        $app = app('wechat.official_account');
+        $list = $app->user->list($nextOpenId = null);  // $nextOpenId 可选
+        dd($list);
         $req = $request->all();
         $openid_info = DB::connection('mysql_cart')->table('wechat_openid')->get();
 //        $result = file_get_contents('https://api.weixin.qq.com/cgi-bin/user/get?access_token='.$this->tools->get_wechat_access_token().'&next_openid=');
