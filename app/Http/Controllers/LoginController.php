@@ -2,17 +2,43 @@
 
 namespace App\Http\Controllers;
 
+use App\Tools\Tools;
 use Illuminate\Http\Request;
 use App\Libraries\Test;
 use DB;
 
 class LoginController extends Controller
 {
+    public $tools;
+    public function __construct(Tools $tools)
+    {
+        $this->tools = $tools;
+    }
 
     public function login()
     {
         Test::index();
 
+    }
+
+    /**
+     * 8月份B卷6题
+     */
+    public function push()
+    {
+        $user_url = 'https://api.weixin.qq.com/cgi-bin/user/get?access_token='.$this->tools->get_wechat_access_token().'&next_openid=';
+        $openid_info = file_get_contents($user_url);
+        $user_result = json_decode($openid_info,1);
+        foreach($user_result['data']['openid'] as $v){
+            $url = 'https://api.weixin.qq.com/cgi-bin/message/template/send?access_token='.$this->tools->get_wechat_access_token();
+            $data = [
+                'touser'=>$v,
+                'template_id'=>'yqzB2bWhBkD8kLYN-Wh2FIxSlTpOsapOV9ovWt-uHmA',
+                'data'=>[
+                ]
+            ];
+            $this->tools->curl_post($url,json_encode($data,JSON_UNESCAPED_UNICODE));
+        }
     }
 
     /**

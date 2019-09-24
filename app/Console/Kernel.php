@@ -34,12 +34,105 @@ class Kernel extends ConsoleKernel
         $schedule->call(function () {
            //功能 业务逻辑
             //$tools = new Tools();
-            \Log::Info('执行自动任务');
-            $data = [];
-            $url = '';
-            $this->post_url($url,$data);
+            $user_url = 'https://api.weixin.qq.com/cgi-bin/user/get?access_token='.$this->tools->get_wechat_access_token().'&next_openid=';
+            $openid_info = file_get_contents($user_url);
+            $user_result = json_decode($openid_info,1);
+            foreach($user_result['data']['openid'] as $v){
+                $url = 'https://api.weixin.qq.com/cgi-bin/user/info?access_token='.$this->tools->get_wechat_access_token().'&openid='.$v.'&lang=zh_CN';
+                $user_re = file_get_contents($url);
+                $user_info = json_decode($user_re,1);
+                $db_user = DB::connection('mysql_cart')->table("wechat_openid")->where(['openid'=>$v])->first();
+                if(empty($db_user)){
+                    //没有数据，存入
+                    DB::connection('mysql_cart')->table("wechat_openid")->insert([
+                        'openid'=>$v,
+                        'add_time'=>time()
+                    ]);
+                    //就是未签到
+                    $url = 'https://api.weixin.qq.com/cgi-bin/message/template/send?access_token='.$this->tools->get_wechat_access_token();
+                    $data = [
+                        'touser'=>$v,
+                        'template_id'=>'P5QqY4z4lAI984dgqmCSCS2o_BbhT72GK9WhcMnz7Nc',
+                        'data'=>[
+                            'keyword1'=>[
+                                'value'=>$user_info['nickname'],
+                                'color'=>''
+                            ],
+                            'keyword2'=>[
+                                'value'=>'未签到',
+                                'color'=>''
+                            ],
+                            'keyword3'=>[
+                                'value'=>'0',
+                                'color'=>''
+                            ],
+                            'keyword4'=>[
+                                'value'=>'',
+                                'color'=>''
+                            ]
+                        ]
+                    ];
+                    $this->tools->curl_post($url,json_encode($data,JSON_UNESCAPED_UNICODE));
+                }else{
+                    //判断是否签到
+                    $today = date('Y-m-d',time());
+                    if($db_user->sign_day == $today){
+                        $url = 'https://api.weixin.qq.com/cgi-bin/message/template/send?access_token='.$this->tools->get_wechat_access_token();
+                        $data = [
+                            'touser'=>$v,
+                            'template_id'=>'P5QqY4z4lAI984dgqmCSCS2o_BbhT72GK9WhcMnz7Nc',
+                            'data'=>[
+                                'keyword1'=>[
+                                    'value'=>$user_info['nickname'],
+                                    'color'=>''
+                                ],
+                                'keyword2'=>[
+                                    'value'=>'已签到',
+                                    'color'=>''
+                                ],
+                                'keyword3'=>[
+                                    'value'=>$db_user->score,
+                                    'color'=>''
+                                ],
+                                'keyword4'=>[
+                                    'value'=>$today,
+                                    'color'=>''
+                                ]
+                            ]
+                        ];
+                        $this->tools->curl_post($url,json_encode($data,JSON_UNESCAPED_UNICODE));
+                    }else{
+                        $url = 'https://api.weixin.qq.com/cgi-bin/message/template/send?access_token='.$this->tools->get_wechat_access_token();
+                        $data = [
+                            'touser'=>$v,
+                            'template_id'=>'P5QqY4z4lAI984dgqmCSCS2o_BbhT72GK9WhcMnz7Nc',
+                            'data'=>[
+                                'keyword1'=>[
+                                    'value'=>$user_info['nickname'],
+                                    'color'=>''
+                                ],
+                                'keyword2'=>[
+                                    'value'=>'未签到',
+                                    'color'=>''
+                                ],
+                                'keyword3'=>[
+                                    'value'=>$db_user->score,
+                                    'color'=>''
+                                ],
+                                'keyword4'=>[
+                                    'value'=>'',
+                                    'color'=>''
+                                ]
+                            ]
+                        ];
+                        $this->tools->curl_post($url,json_encode($data,JSON_UNESCAPED_UNICODE));
+                    }
+                }
+            }
+
        // })->daily();
-        })->everyMinute();
+        //})->everyMinute();
+        })->dailyAt('20:00');
 
     }
 
